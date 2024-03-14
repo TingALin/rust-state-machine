@@ -18,7 +18,7 @@ impl system::Config for Runtime {
 	type Nonce = types::Nonce;
 }
 impl balances::Config  for Runtime {
-    type AccountId = types::AccountId;
+    // type AccountId = types::AccountId;
     type Balance = types::Balance;
 }
 
