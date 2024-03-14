@@ -15,7 +15,8 @@ mod types {
 }
 
 pub enum RuntimeCall {
-	BalancesTransfer { to: types::AccountId, amount: types::Balance },
+	// BalancesTransfer { to: types::AccountId, amount: types::Balance },
+	Balances(balances::Call<Runtime>),
 }
 
 #[derive(Debug)]
@@ -64,8 +65,10 @@ impl crate::support::Dispatch for Runtime {
 		runtime_call: Self::Call,
 	) -> support::DispatchResult {
 		match runtime_call {
-			RuntimeCall::BalancesTransfer { to, amount } => {
-				self.balances.transfer(&caller, &to, amount)?;
+			// RuntimeCall::BalancesTransfer { to, amount } => {
+			// 	self.balances.transfer(&caller, &to, amount)?;
+			RuntimeCall::Balances(call) => {
+				self.balances.dispatch(caller, call)?;
 			},
 		}
 		Ok(())
@@ -77,7 +80,7 @@ fn main() {
 
 	let alice = "alice".to_string();
 	let bob = "bob".to_string();
-	let charlie = "bob".to_string();
+	let charlie = "charlie".to_string();
 
 	runtime.balances.set_balance(&alice, 100);
 	// runtime.system.set_block_number();
@@ -87,19 +90,21 @@ fn main() {
 	// let _ = runtime.balances.transfer(&alice, &bob, 30).map_err(|e| eprintln!("{}", e));
 	// runtime.system.inc_nonce(&alice);
 	// let _ = runtime.balances.transfer(&alice, &charlie, 20).map_err(|e| eprintln!("{}", e));
-    let block_1 = types::Block{
-        header: support::Header { block_number: 1 },
-        extrinsics: vec![
-            support::Extrinsic {
+	let block_1 = types::Block {
+		header: support::Header { block_number: 1 },
+		extrinsics: vec![
+			support::Extrinsic {
 				caller: alice.clone(),
-				call: RuntimeCall::BalancesTransfer { to: bob, amount: 20 },
+				// call: RuntimeCall::BalancesTransfer { to: bob, amount: 20 },
+				call: RuntimeCall::Balances(balances::Call::Transfer { to: bob, amount: 20 }),
 			},
 			support::Extrinsic {
 				caller: alice,
-				call: RuntimeCall::BalancesTransfer { to: charlie, amount: 20 },
+				// call: RuntimeCall::BalancesTransfer { to: charlie, amount: 20 },
+				call: RuntimeCall::Balances(balances::Call::Transfer { to: charlie, amount: 20 }),
 			},
-        ],
-    };
-    runtime.execute_block(block_1).expect("invalid block");
-    println!("{:#?}", runtime);
+		],
+	};
+	runtime.execute_block(block_1).expect("invalid block");
+	println!("{:#?}", runtime);
 }
