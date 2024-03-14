@@ -1,33 +1,34 @@
 use num::{CheckedAdd, CheckedSub, Zero};
 use std::collections::BTreeMap;
 
+pub trait Config {
+    type AccountId: Ord + Clone;
+	type Balance: Zero + CheckedSub + CheckedAdd + Copy;
+}
 #[derive(Debug)]
-pub struct Pallet<AccountId, Balance> {
-	balances: BTreeMap<AccountId, Balance>,
+pub struct Pallet<T: Config> {
+	balances: BTreeMap<T::AccountId, T::Balance>,
 }
 
-impl<AccountId, Balance> Pallet<AccountId, Balance>
-where
-	AccountId: Ord + Clone,
-	Balance: Zero + CheckedSub + CheckedAdd + Copy,
+impl<T: Config> Pallet<T>
 {
 	pub fn new() -> Self {
 		Self { balances: BTreeMap::new() }
 	}
 
-	pub fn set_balance(&mut self, who: &AccountId, value: Balance) {
+	pub fn set_balance(&mut self, who: &T::AccountId, value: T::Balance) {
 		self.balances.insert(who.clone(), value);
 	}
 
-	pub fn balance(&self, who: &AccountId) -> Balance {
-		*self.balances.get(who).unwrap_or(&Balance::zero())
+	pub fn balance(&self, who: &T::AccountId) -> T::Balance {
+		*self.balances.get(who).unwrap_or(&T::Balance::zero())
 	}
 
 	pub fn transfer(
 		&mut self,
-		from: &AccountId,
-		to: &AccountId,
-		amount: Balance,
+		from: &T::AccountId,
+		to: &T::AccountId,
+		amount: T::Balance,
 	) -> Result<(), &'static str> {
 		let balance_from = self.balance(from);
 		let balance_to = self.balance(to);
@@ -46,9 +47,15 @@ where
 mod balance_tests {
 	use super::Pallet;
 
+    struct TestConfig;
+    impl super::Config for TestConfig{
+        type AccountId = String;
+        type Balance = u128;
+    }
+
 	#[test]
 	fn init_balances() {
-		let mut balances = Pallet::new();
+		let mut balances = Pallet::<TestConfig>::new();
 
 		let alice = "alice".to_string();
 		let bob = "bob".to_string();
@@ -61,7 +68,7 @@ mod balance_tests {
 
 	#[test]
 	fn transfer_ok() {
-		let mut balances = Pallet::<String, u128>::new();
+		let mut balances = Pallet::<TestConfig>::new();
 
 		let alice = "alice".to_string();
 		let bob = "bob".to_string();
